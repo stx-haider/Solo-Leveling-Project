@@ -159,7 +159,7 @@ export default function App() {
         const playerName = localStorage.getItem('solo_player_name') || "Hunter";
 
         // 🛑 اب یہ API مخصوص یوزر کا ڈیٹا لائے گی
-        const response = await fetch(`http://localhost:8000/api/player/${playerId}?name=${playerName}`);
+        const response = await fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/${playerId}?name=${playerName}`);
         
         if (response.ok) {
           const dbData = await response.json();
@@ -194,7 +194,7 @@ export default function App() {
     // 🛑 ڈیٹا سیو کرتے وقت بھی اسی ہنٹر کی ID جائے گی
     const playerId = localStorage.getItem('player_id') || 1; 
 
-    fetch(`http://localhost:8000/api/player/update/${playerId}`, {
+    fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/update/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
