@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './login.css';
+import './Login.css';
 import { User, Lock, Eye, EyeOff, ArrowRight, ShieldAlert, Activity, BarChart2 } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
