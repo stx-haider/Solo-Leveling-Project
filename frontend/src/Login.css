@@ -296,3 +296,29 @@
   .login-glass-box { padding: 25px 15px; border: none; background: transparent; box-shadow: none; }
   .system-header-main h1 { font-size: 30px; }
 }
+/* --- FIT EVERYTHING IN THE BOX --- */
+.input-group {
+    margin-bottom: 10px !important;
+}
+
+.input-group label {
+    font-size: 11px !important; /* لیبل تھوڑا چھوٹا کیا */
+    margin-bottom: 4px !important;
+}
+
+.input-box {
+    min-height: 40px !important; /* ڈبوں کی اونچائی کم کی */
+    padding: 0 10px !important;
+}
+
+.system-login {
+    margin-top: 10px !important;
+    padding: 10px !important;
+    min-height: 45px !important; /* بٹن کو تھوڑا سمارٹ کیا */
+}
+
+/* اگر کوئی ایرر میسج کی کلاس ہے تو اس کی جگہ کم کی */
+.error-message, .success-message {
+    margin: 5px 0 !important;
+    padding: 5px !important;
+}
