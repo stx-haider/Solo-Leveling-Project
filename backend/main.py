@@ -24,24 +24,35 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-USER_EMAIL = "haidere771@gmail.com"
+import smtplib
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-def send_system_email(subject: str, body: str):
-    sender_email = "sycopath229170@gmail.com"  
-    sender_password = "ldmjalconauzyeoi"    
+# اب ہم receiver_email فنکشن کے اندر پاس کریں گے
+def send_system_email(receiver_email: str, subject: str, body: str):
+    # یہ دونوں چیزیں اب ہم .env فائل سے محفوظ طریقے سے اٹھائیں گے
+    sender_email = os.getenv("SENDER_EMAIL") 
+    sender_password = os.getenv("EMAIL_PASSWORD") 
+    
     try:
         msg = MIMEMultipart()
         msg['From'] = sender_email
-        msg['To'] = USER_EMAIL
+        msg['To'] = receiver_email  # <--- اب یہ ڈائنیمک ہو گیا ہے!
         msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        
+        # HTML بھیجنے کے لیے 'html' کر دیا ہے تاکہ خوبصورت ای میل جائے
+        msg.attach(MIMEText(body, 'html'))
+        
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
-        server.sendmail(sender_email, USER_EMAIL, msg.as_string())
+        server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
+        print(f"✅ System Alert sent successfully to {receiver_email}")
+        
     except Exception as e:
-        print(f"Email failed: {e}")
+        print(f"❌ Email failed: {e}")
 
 # ================= QUEST POOLS =================
 
@@ -166,6 +177,7 @@ def calculate_rank(level):
 class PlayerDB(Base):
     __tablename__ = "player"
     id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=True)
     name = Column(String, default="SUNG JINWOO")
     name_changes_left = Column(Integer, default=3) 
     title = Column(String, default="The Disciplined")
@@ -358,7 +370,21 @@ def update_player_stats(player_id: int, data: PlayerUpdatePayload, db: Session =
         all_done = all(t.get('isComplete', False) for t in data.dailyTasks)
         if all_done and player.email_sent_today == 0 and len(data.dailyTasks) > 0:
             player.email_sent_today = 1
-            send_system_email("🏆 CONGRATULATIONS!", "You have successfully completed all your daily tasks!")
+            
+            # 🛑 یہاں ہم نے ڈیزائن اور 3 چیزیں (ای میل، ٹائٹل، میسج) پوری کر دیں 🛑
+            email_subject = "🏆 CONGRATULATIONS: Daily Quests Cleared!"
+            email_body = """
+            <div style="background-color: #0a0f1a; color: #58a6ff; padding: 25px; border: 1px solid #00ff00; border-radius: 8px;">
+                <h2 style="color: #00ff00; text-align: center;">STATUS: CLEARED</h2>
+                <hr style="border-color: #00ff00;">
+                <p>Hunter, you have successfully completed all your daily tasks!</p>
+                <p>The System acknowledges your growth.</p>
+                <br>
+                <p style="color: #00ff00; font-weight: bold;">[ SYSTEM ADMIN ]</p>
+            </div>
+            """
+            
+            send_system_email(player.email, email_subject, email_body)
 
         current_rank, _ = calculate_rank(data.level)
         player.rank = current_rank
@@ -366,3 +392,78 @@ def update_player_stats(player_id: int, data: PlayerUpdatePayload, db: Session =
         return {"message": "System Synced!"}
         
     return {"error": "Player not found"}
+from pydantic import BaseModel
+
+# 1. یہ ماڈل فرنٹ اینڈ سے یوزر کا نام اور ای میل پکڑے گا
+class PlayerCreate(BaseModel):
+    name: str
+    email: str
+
+# 2. یہ وہ فنکشن ہے جو فرنٹ اینڈ کال کرے گا اور ای میل جائے گی
+@app.post("/api/player/signup")
+async def trigger_awakening_email(player: PlayerCreate):
+    
+    email_subject = "AWAKENING COMPLETE: Welcome to the System"
+    
+    # سولو لیولنگ تھیم والی زبردست HTML ای میل
+    email_body = f"""
+    <div style="background-color: #0a0f1a; color: #58a6ff; padding: 25px; font-family: 'Courier New', Courier, monospace; border: 1px solid #1f6feb; border-radius: 8px;">
+        <h2 style="text-align: center; text-transform: uppercase; letter-spacing: 2px;">System Notification</h2>
+        <hr style="border-color: #1f6feb;">
+        <h3>Welcome Hunter <b style="color: white;">{player.name}</b>!</h3>
+        <p>Your awakening is successful. The System is now ONLINE.</p>
+        <p>Prepare yourself. Complete your daily quests to level up. Failure to do so will result in penalty zones.</p>
+        <br>
+        <p style="color: #ff4444; font-weight: bold;">[ SYSTEM ADMIN ]</p>
+    </div>
+    """
+    
+    # آپ کے بنائے ہوئے ای میل فنکشن کو یہاں چلایا جائے گا
+    send_system_email(player.email, email_subject, email_body)
+    
+    return {"message": "Awakening email sent successfully!"}
+
+class DailyQuestComplete(BaseModel):
+    name: str
+    email: str
+
+@app.post("/api/quest/daily-complete")
+async def daily_quest_cleared_email(player: DailyQuestComplete):
+    email_subject = "✅ DAILY QUEST CLEARED: The System is Satisfied"
+    
+    email_body = f"""
+    <div style="background-color: #0a0f1a; color: #58a6ff; padding: 25px; border: 1px solid #00ff00; border-radius: 8px;">
+        <h2 style="color: #00ff00; text-align: center;">STATUS: RECOVERED</h2>
+        <hr style="border-color: #00ff00;">
+        <p>Hunter <b>{player.name}</b>,</p>
+        <p>You have successfully completed <b>ALL</b> your Daily Quests.</p>
+        <p>The System acknowledges your effort. Your rewards have been added to your inventory.</p>
+        <br>
+        <p style="color: #00ff00; font-weight: bold;">[ SYSTEM ADMIN ]</p>
+    </div>
+    """
+    send_system_email(player.email, email_subject, email_body)
+    return {"message": "Daily Quest completion email sent!"}
+
+class PenaltyActiveEmail(BaseModel):
+    name: str
+    email: str
+
+@app.post("/api/system/penalty-active")
+async def penalty_activated_email(player: PenaltyActiveEmail):
+    email_subject = "🛑 SYSTEM ALERT: PENALTY ZONE ACTIVATED"
+    
+    email_body = f"""
+    <div style="background-color: #1a0a0a; color: #ff4444; padding: 25px; border: 1px solid #ff0000; border-radius: 8px; font-family: 'Courier New', Courier, monospace;">
+        <h2 style="color: #ff0000; text-align: center; text-transform: uppercase;">Penalty Initiated</h2>
+        <hr style="border-color: #ff0000;">
+        <p>Hunter <b style="color: white;">{player.name}</b>,</p>
+        <p>You failed to complete your Daily Quests in time.</p>
+        <p>You have been forcefully teleported to the <b>Penalty Zone</b>.</p>
+        <p style="color: yellow;">Objective: Survive for the required duration.</p>
+        <br>
+        <p style="font-weight: bold; font-size: 18px;">[ SURVIVE. ]</p>
+    </div>
+    """
+    send_system_email(player.email, email_subject, email_body)
+    return {"message": "Penalty active email sent!"}
