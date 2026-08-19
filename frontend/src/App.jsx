@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import './App.css';
-import Login from './Login'; // Agar Login ki file kisi aur folder mein hai toh path theek kar lena
+import Login from './login.jsx'; // Agar Login ki file kisi aur folder mein hai toh path theek kar lena
 import clickAudio from './assets/click.mp3';
 import levelUpAudio from './assets/level-up.mp3';
 import penaltyAudio from './assets/warning-alarm.mp3';
@@ -150,21 +150,19 @@ export default function App() {
   }, [isAuthenticated]);
 
   // ================= FETCH & SYNC =================
+  // ================= FETCH & SYNC =================
   useEffect(() => {
     if (!isAuthenticated) return; // 🛑 لاگ ان نہ ہو تو بیک گراؤنڈ ڈیٹا فیچ نہ ہو
     const fetchPlayerData = async () => {
       try {
-        // 🛑 براؤزر کی میموری سے کرنٹ یوزر کی ID نکال رہے ہیں (اگر نہ ملے تو بائی ڈیفالٹ 1)
         const playerId = localStorage.getItem('player_id') || 1; 
         const playerName = localStorage.getItem('solo_player_name') || "Hunter";
 
-        // 🛑 اب یہ API مخصوص یوزر کا ڈیٹا لائے گی
-        const response = await fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/${playerId}?name=${playerName}`);
+        const response = await fetch(`https://solo-leveling-project-hazel.vercel.app/player/${playerId}?name=${playerName}`);
         
         if (response.ok) {
           const dbData = await response.json();
           
-          // 🛑 اگر بیک اینڈ سے کوئی ایرر آئے (جیسے یوزر نہ ملے) تو کریش سے بچانے کے لیے
           if (dbData.error) {
             console.error("System Error:", dbData.error);
             return;
@@ -178,10 +176,30 @@ export default function App() {
           setDailyTasks(dbData.dailyTasks);
           setQuests(dbData.centerQuests);
           
+          // 🛑 PENALTY ZONE LOGIC 🛑
           if(dbData.penaltyActive === 1) {
             setActiveTab('PENALTY');
             setShowPenaltyAlert(true);
             speakSystemMessage("System Alert! Penalty Zone Activated.");
+
+            // ==== NAYA EMAIL TRIGGER ====
+            const playerEmail = localStorage.getItem('solo_player_email');
+            const today = new Date().toDateString();
+            const penaltyMailSent = localStorage.getItem(`penalty_mail_sent_${today}`);
+
+            // Check karega ke kya aaj penalty ki mail pehle ja chuki hai?
+            if (playerEmail && !penaltyMailSent) {
+              fetch('https://solo-leveling-project-hazel.vercel.app/system/penalty-active', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name: playerName, email: playerEmail })
+              }).catch(err => console.log("Email System Error:", err));
+
+              // System ko bata diya ke aaj ki mail chali gayi hai
+              localStorage.setItem(`penalty_mail_sent_${today}`, 'true');
+              console.log("System: Penalty Email Sent!");
+            }
+            // ============================
           }
           setIsBackendLive(true);
         }
@@ -194,7 +212,7 @@ export default function App() {
     // 🛑 ڈیٹا سیو کرتے وقت بھی اسی ہنٹر کی ID جائے گی
     const playerId = localStorage.getItem('player_id') || 1; 
 
-    fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/update/${playerId}`, {
+    fetch(`https://solo-leveling-project-hazel.vercel.app/player/update/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -286,6 +304,19 @@ export default function App() {
       const allTasksCompleted = updatedTasks.every(t => t.isComplete);
       if (allTasksCompleted && updatedTasks.length > 0) {
         speakSystemMessage("All tasks completed! Thank you so much, Hunter. Consistency is the key.");
+        
+        // 🛑 NEW EMAIL TRIGGER LOGIC 🛑
+        const playerEmail = localStorage.getItem('solo_player_email');
+        const playerName = localStorage.getItem('solo_player_name');
+        
+        if (playerEmail) {
+            fetch('https://solo-leveling-project-hazel.vercel.app/quest/daily-complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: playerName, email: playerEmail })
+            }).catch(err => console.log("Email System Error:", err));
+        }
+        // 🛑 ===================== 🛑
       }
 
       setQuests(updatedQuests);
