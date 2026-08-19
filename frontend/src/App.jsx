@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import './App.css';
-import Login from './login.jsx'; // Agar Login ki file kisi aur folder mein hai toh path theek kar lena
+import Login from './Login.jsx'; // Agar Login ki file kisi aur folder mein hai toh path theek kar lena
 import clickAudio from './assets/click.mp3';
 import levelUpAudio from './assets/level-up.mp3';
 import penaltyAudio from './assets/warning-alarm.mp3';
