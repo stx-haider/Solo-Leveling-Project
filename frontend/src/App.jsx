@@ -158,7 +158,7 @@ export default function App() {
         const playerId = localStorage.getItem('player_id') || 1; 
         const playerName = localStorage.getItem('solo_player_name') || "Hunter";
 
-        const response = await fetch(`https://solo-leveling-project-hazel.vercel.app/player/${playerId}?name=${playerName}`);
+        const response = await fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/${playerId}?name=${playerName}`);
         
         if (response.ok) {
           const dbData = await response.json();
@@ -189,7 +189,7 @@ export default function App() {
 
             // Check karega ke kya aaj penalty ki mail pehle ja chuki hai?
             if (playerEmail && !penaltyMailSent) {
-              fetch('https://solo-leveling-project-hazel.vercel.app/system/penalty-active', {
+              fetch('https://solo-leveling-project-hazel.vercel.app/api/system/penalty-active', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ name: playerName, email: playerEmail })
@@ -212,7 +212,7 @@ export default function App() {
     // 🛑 ڈیٹا سیو کرتے وقت بھی اسی ہنٹر کی ID جائے گی
     const playerId = localStorage.getItem('player_id') || 1; 
 
-    fetch(`https://solo-leveling-project-hazel.vercel.app/player/update/${playerId}`, {
+    fetch(`https://solo-leveling-project-hazel.vercel.app/api/player/update/${playerId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -310,7 +310,7 @@ export default function App() {
         const playerName = localStorage.getItem('solo_player_name');
         
         if (playerEmail) {
-            fetch('https://solo-leveling-project-hazel.vercel.app/quest/daily-complete', {
+            fetch('https://solo-leveling-project-hazel.vercel.app/api/quest/daily-complete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: playerName, email: playerEmail })
