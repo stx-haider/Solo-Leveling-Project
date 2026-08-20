@@ -16,11 +16,11 @@ load_dotenv()
 
 # ================= DATABASE SETUP =================
 # 🎯 SUPABASE (PostgreSQL) CLOUD DATABASE CONNECTION
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_system = os.getenv("DATABASE_URL")
 
 
 # PostgreSQL mein 'check_same_thread' ki zaroorat nahi hoti
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(DATABASE_system)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
